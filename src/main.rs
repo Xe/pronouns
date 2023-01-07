@@ -7,27 +7,148 @@ use axum::{
 use axum_extra::routing::SpaRouter;
 use maud::{html, Markup, Render, DOCTYPE};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, net::SocketAddr};
+use std::net::SocketAddr;
+
+#[derive(Clone, Debug)]
+struct PronounTrie {
+    inner: String,
+    left: Option<Box<PronounTrie>>,
+    right: Option<Box<PronounTrie>>,
+    next: Option<Box<PronounTrie>>,
+}
+
+impl PronounTrie {
+    // Build a trie out of a vector of pronouns.
+    pub fn build(pronouns: Vec<PronounSet>) -> Self {
+        let mut base: Option<Box<PronounTrie>> = None;
+
+        for pronoun in pronouns {
+            let key = vec![
+                pronoun.nominative,
+                pronoun.accusative,
+                pronoun.determiner,
+                pronoun.possessive,
+                pronoun.reflexive,
+            ];
+
+            Self::insert_to_child(&mut base, key)
+        }
+
+        return *base.unwrap()
+    }
+
+    pub fn guess(&self, key: &mut Vec<String>) -> Vec<PronounSet> {
+        let mut strings = self.guess_strings(key);
+
+        strings.drain(..).filter_map(|x| if x.len() == 5 {
+            Some(PronounSet {
+                nominative: x[0].clone(),
+                accusative: x[1].clone(),
+                determiner: x[2].clone(),
+                possessive: x[3].clone(),
+                reflexive:  x[4].clone(),
+            })
+        } else {
+            None
+        }).collect()
+    }
+
+    fn guess_strings(&self, key: &mut Vec<String>) -> Vec<Vec<String>> {
+        let car = key.get(0).clone();
+
+        let mut result = Vec::new();
+
+        let search_left = car.is_none() || car.unwrap() < &self.inner;
+        let search_right = car.is_none() || car.unwrap() > &self.inner;
+        let search_down = car.is_none() || car.unwrap() == &self.inner;
+
+        if search_left {
+            if let Some(left) = self.left.as_ref() {
+                result.extend(left.guess_strings(key))
+            }
+        }
+
+        if search_right {
+            if let Some(right) = self.right.as_ref() {
+                result.extend(right.guess_strings(key))
+            }
+        }
+
+        if search_down {
+            if let Some(next) = self.next.as_ref() {
+                if !key.is_empty() {
+                    key.remove(0);
+                }
+                let mut basket = next.guess_strings(key);
+
+                let basket = basket.drain(..).map(|x| {
+                    let mut y = vec![self.inner.clone()];
+                    y.extend(x);
+                    y
+                });
+
+                result.extend(basket.collect::<Vec<Vec<String>>>());
+            } else {
+                result.extend(vec![vec![self.inner.clone()]]);
+            }
+        }
+
+        result
+    }
+
+    // Get all strings in the set.
+    pub fn gather(&self) -> Vec<PronounSet> {
+        // TODO
+        Vec::new()
+    }
+
+    fn new(inner: String) -> Self {
+        Self {
+            inner,
+            left: None,
+            right: None,
+            next: None,
+        }
+    }
+
+    fn insert(&mut self, mut key: Vec<String>) {
+        let car = &key[0];
+
+        if car < &self.inner {
+            Self::insert_to_child(&mut self.left, key);
+        } else if car > &self.inner {
+            Self::insert_to_child(&mut self.right, key);
+        } else {
+            key.remove(0);
+            Self::insert_to_child(&mut self.next, key);
+        }
+    }
+
+    fn insert_to_child(s: &mut Option<Box<Self>>, mut v: Vec<String>) {
+        match s {
+            None => {
+                let car = v[0].clone();
+                v.remove(0);
+                let cons = v;
+
+                let mut child = Self::new(car);
+
+                if !cons.is_empty() {
+                    Self::insert_to_child(&mut child.next, cons);
+                }
+
+                s.replace(Box::new(child));
+            },
+            Some(t) => t.insert(v),
+        };
+    }
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let pronouns: Vec<PronounSet> = serde_dhall::from_file("./dhall/package.dhall").parse()?;
 
-    let mut pron_map: HashMap<String, PronounSet> = HashMap::new();
-
-    for pronoun in pronouns {
-        pron_map.insert(
-            format!(
-                "{}/{}/{}/{}/{}",
-                pronoun.nominative,
-                pronoun.accusative,
-                pronoun.determiner,
-                pronoun.possessive,
-                pronoun.reflexive
-            ),
-            pronoun,
-        );
-    }
+    let pron_trie = PronounTrie::build(pronouns);
 
     let files = SpaRouter::new("/static/css", env!("XESS_PATH"));
 
@@ -43,7 +164,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/", get(handler))
         .route("/*pronoun", get(guess_pronouns))
         .merge(files)
-        .with_state(pron_map);
+        .with_state(pron_trie);
 
     // run it
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -56,13 +177,9 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn all_pronouns_json(
-    State(prons): State<HashMap<String, PronounSet>>,
+    State(prons): State<PronounTrie>
 ) -> Json<Vec<PronounSet>> {
-    let mut result: Vec<PronounSet> = vec![];
-
-    for (_, v) in &prons {
-        result.push(v.clone())
-    }
+    let result = prons.guess(&mut Vec::new());
 
     Json(result)
 }
@@ -78,60 +195,44 @@ pub struct Error {
 
 async fn guess_pronouns_json(
     Path(pronoun): Path<String>,
-    State(prons): State<HashMap<String, PronounSet>>,
-) -> Result<(StatusCode, Json<PronounSet>), (StatusCode, Json<Error>)> {
-    if pronoun == "they/.../themselves" {
-        if let Some(v) = prons.get("they/them/their/theirs/themselves") {
-            return Ok((StatusCode::OK, Json(v.clone())));
-        }
-    }
+    State(prons): State<PronounTrie>,
+) -> Result<(StatusCode, Json<Vec<PronounSet>>), (StatusCode, Json<Error>)> {
+    let mut key = pronoun.split("/").map(|x| x.to_owned()).collect();
+    let guessed = prons.guess(&mut key);
 
-    for (k, v) in &prons {
-        if k.starts_with(&pronoun) {
-            return Ok((StatusCode::OK, Json(v.clone())));
-        }
+    if !guessed.is_empty() {
+        Ok((StatusCode::OK, Json(guessed.clone())))
+    } else {
+        Err((
+            StatusCode::NOT_FOUND,
+            Json(Error {
+                message: format!("can't find {pronoun} in my database"),
+            }),
+        ))
     }
-
-    Err((
-        StatusCode::NOT_FOUND,
-        Json(Error {
-            message: format!("can't find {pronoun} in my database"),
-        }),
-    ))
 }
 
 async fn guess_pronouns(
     Path(pronoun): Path<String>,
-    State(prons): State<HashMap<String, PronounSet>>,
+    State(prons): State<PronounTrie>,
 ) -> (StatusCode, Markup) {
-    if pronoun == "they/.../themselves" {
-        if let Some(v) = prons.get("they/them/their/theirs/themselves") {
-            let title = format!("{}/{}", v.nominative, v.accusative);
-            return (
-                StatusCode::OK,
-                base(
-                    Some(&title),
-                    html! {
-                        (v)
-                    },
-                ),
-            );
-        }
-    }
+    let mut key = pronoun.split("/").map(|x| x.to_owned()).collect();
+    let guessed = prons.guess(&mut key);
 
-    for (k, v) in &prons {
-        if k.starts_with(&pronoun) {
-            let title = format!("{}/{}", v.nominative, v.accusative);
-            return (
-                StatusCode::OK,
-                base(
-                    Some(&title),
-                    html! {
-                        (v)
-                    },
-                ),
-            );
-        }
+    // If we have at least one allowed guess, let's just show the first. This means that
+    // ambiguities are resolved in alphabetical order. (Note that the API will return all matches,
+    // we want a fuzzier/friendlier interface on the web.)
+    if let Some(v) = guessed.last() {
+        let title = format!("{}/{}", v.nominative, v.accusative);
+        return (
+            StatusCode::OK,
+            base(
+                Some(&title),
+                html! {
+                    (v)
+                },
+            ),
+        );
     }
 
     let sp = pronoun.split("/").collect::<Vec<&str>>();
@@ -173,23 +274,16 @@ async fn guess_pronouns(
     )
 }
 
-async fn all_pronouns(State(prons): State<HashMap<String, PronounSet>>) -> Markup {
-    let mut pronouns: Vec<(String, String)> = Vec::new();
-
-    for (k, v) in &prons {
-        pronouns.push((
-            format!("{}/{}", v.nominative, v.accusative),
-            format!("/{k}"),
-        ));
-    }
-
-    pronouns.sort();
+async fn all_pronouns(State(prons): State<PronounTrie>) -> Markup {
+    let pronouns = prons.guess(&mut Vec::new());
+    let dsp = pronouns.iter()
+        .map(|v| (format!("{}/{}", v.nominative, v.accusative), v.url()));
 
     base(
         Some("All pronouns"),
         html! {
             ul {
-                @for (title, link) in &pronouns {
+                @for (title, link) in dsp {
                     li {
                         a href=(link) {(title)}
                     }
@@ -341,7 +435,7 @@ fn base(title: Option<&str>, body: Markup) -> Markup {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, Default)]
+#[derive(Clone, Deserialize, Serialize, Default, Debug)]
 pub struct PronounSet {
     nominative: String,
     accusative: String,
@@ -384,5 +478,11 @@ impl Render for PronounSet {
                 li { em{(titlecase::titlecase(&self.nominative))} " threw the frisbee to " em{(self.reflexive)} "." }
             }
         }
+    }
+}
+
+impl PronounSet {
+    fn url(&self) -> String {
+        format!("/{}/{}/{}/{}/{}", self.nominative, self.accusative, self.determiner, self.possessive, self.reflexive)
     }
 }
