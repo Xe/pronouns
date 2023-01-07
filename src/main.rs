@@ -62,7 +62,7 @@ async fn guess_pronouns_json(
     Path(pronoun): Path<String>,
     State(prons): State<PronounTrie>,
 ) -> Result<(StatusCode, Json<Vec<PronounSet>>), (StatusCode, Json<Error>)> {
-    let mut key = pronoun.split("/").map(|x| x.to_owned()).collect();
+    let mut key = url_to_trie_query(pronoun.clone());
     let guessed = prons.guess(&mut key);
 
     if !guessed.is_empty() {
@@ -81,7 +81,7 @@ async fn guess_pronouns(
     Path(pronoun): Path<String>,
     State(prons): State<PronounTrie>,
 ) -> (StatusCode, Markup) {
-    let mut key = pronoun.split("/").map(|x| x.to_owned()).collect();
+    let mut key = url_to_trie_query(pronoun.clone());
     let guessed = prons.guess(&mut key);
 
     // If we have at least one allowed guess, let's just show the first. This means that
@@ -298,4 +298,11 @@ fn base(title: Option<&str>, body: Markup) -> Markup {
             }
         }
     }
+}
+
+fn url_to_trie_query(url: String) -> Vec<Option<String>> {
+    url.split("/").map(|x| match x {
+        "..." | "" => None,
+        x => Some(x.to_owned())
+    }).collect()
 }

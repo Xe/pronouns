@@ -38,7 +38,22 @@ impl PronounTrie {
         return *base.unwrap()
     }
 
-    pub fn guess(&self, key: &mut Vec<String>) -> Vec<PronounSet> {
+    // Take in a vector of optional strings and return the list of matching pronouns. If None is
+    // passed as one of the key elements, it may match any string.
+    pub fn guess(&self, key: &mut Vec<Option<String>>) -> Vec<PronounSet> {
+        // Expand wildcards to fill length 5.
+        let expansion = 5 - key.len();
+        for (i, word) in key.iter().enumerate() {
+            if word.is_none() {
+                for _ in 0..expansion {
+                    key.insert(i, None);
+                }
+                break;
+            }
+        }
+
+        println!("{:?}", key);
+
         let mut strings = self.guess_strings(key);
 
         strings.drain(..).filter_map(|x| if x.len() == 5 {
@@ -54,14 +69,16 @@ impl PronounTrie {
         }).collect()
     }
 
-    fn guess_strings(&self, key: &mut Vec<String>) -> Vec<Vec<String>> {
-        let car = key.get(0).clone();
+    fn guess_strings(&self, key: &mut Vec<Option<String>>) -> Vec<Vec<String>> {
+        let car = key.get(0).map(|x| x.as_ref()).clone().flatten();
+
+        let wildcard = car.is_none();
 
         let mut result = Vec::new();
 
-        let search_left = car.is_none() || car.unwrap() < &self.inner;
-        let search_right = car.is_none() || car.unwrap() > &self.inner;
-        let search_down = car.is_none() || car.unwrap() == &self.inner;
+        let search_left = wildcard || car.unwrap() < &self.inner;
+        let search_right = wildcard || car.unwrap() > &self.inner;
+        let search_down = wildcard || car.unwrap() == &self.inner;
 
         if search_left {
             if let Some(left) = self.left.as_ref() {
@@ -80,6 +97,7 @@ impl PronounTrie {
                 if !key.is_empty() {
                     key.remove(0);
                 }
+
                 let mut basket = next.guess_strings(key);
 
                 let basket = basket.drain(..).map(|x| {
