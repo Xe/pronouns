@@ -1,4 +1,5 @@
-[ ./pronouns/she-her-her-hers-herself.dhall
+[
+, ./pronouns/she-her-her-hers-herself.dhall
 , ./pronouns/he-him-his-his-himself.dhall
 , ./pronouns/they-them-their-theirs-themselves.dhall
 , ./pronouns/ze-hir-hir-hirs-hirself.dhall
@@ -29,6 +30,7 @@
 , ./pronouns/vi-vim-vim-vims-vimself.dhall
 , ./pronouns/xie-xer-xer-xers-xerself.dhall
 , ./pronouns/xe-xem-xyr-xyrs-xemself.dhall
+, ./pronouns/xe-xer-xer-xers-xerself.dhall
 , ./pronouns/xey-xem-xeir-xeirs-xemself.dhall
 , ./pronouns/yo-yo-yos-yos-yosself.dhall
 , ./pronouns/ze-zem-zes-zes-zirself.dhall
