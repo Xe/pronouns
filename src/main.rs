@@ -80,6 +80,12 @@ async fn guess_pronouns_json(
     Path(pronoun): Path<String>,
     State(prons): State<HashMap<String, PronounSet>>,
 ) -> Result<(StatusCode, Json<PronounSet>), (StatusCode, Json<Error>)> {
+    if pronoun == "they/.../themselves" {
+        if let Some(v) = prons.get("they/them/their/theirs/themselves") {
+            return Ok((StatusCode::OK, Json(v.clone())));
+        }
+    }
+
     for (k, v) in &prons {
         if k.starts_with(&pronoun) {
             return Ok((StatusCode::OK, Json(v.clone())));
@@ -98,6 +104,21 @@ async fn guess_pronouns(
     Path(pronoun): Path<String>,
     State(prons): State<HashMap<String, PronounSet>>,
 ) -> (StatusCode, Markup) {
+    if pronoun == "they/.../themselves" {
+        if let Some(v) = prons.get("they/them/their/theirs/themselves") {
+            let title = format!("{}/{}", v.nominative, v.accusative);
+            return (
+                StatusCode::OK,
+                base(
+                    Some(&title),
+                    html! {
+                        (v)
+                    },
+                ),
+            );
+        }
+    }
+
     for (k, v) in &prons {
         if k.starts_with(&pronoun) {
             let title = format!("{}/{}", v.nominative, v.accusative);
