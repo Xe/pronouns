@@ -1,0 +1,10 @@
+# flyctl launch added from .gitignore
+**/.direnv
+**/result
+**/target
+
+
+# Added by cargo
+
+target
+fly.toml

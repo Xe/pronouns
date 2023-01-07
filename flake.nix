@@ -52,8 +52,8 @@
           };
 
           docker = pkgs.dockerTools.buildLayeredImage {
-            name = "xena/pronouns";
-            tag = bin.version;
+            name = "registry.fly.io/xe-pronouns";
+            tag = "latest";
             contents = [ default ];
             config = {
               Cmd = [ "${bin}/bin/pronouns" ];
@@ -73,6 +73,8 @@
             pkg-config
             openssl
             dhall
+            flyctl
+            terraform
           ];
 
           XESS_PATH = "${xess}/static/css";
