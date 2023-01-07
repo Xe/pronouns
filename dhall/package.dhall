@@ -21,6 +21,7 @@
 , ./pronouns/se-sim-ser-sers-serself.dhall
 , ./pronouns/shi-hir-hir-hirs-hirself.dhall
 , ./pronouns/si-hyr-hyr-hyrs-hyrself.dhall
+, ./pronouns/star-star-stars-stars-starself.dhall
 , ./pronouns/they-them-their-theirs-themself.dhall
 , ./pronouns/thon-thon-thons-thons-thonself.dhall
 , ./pronouns/ve-ver-vis-vis-verself.dhall
@@ -28,6 +29,9 @@
 , ./pronouns/vi-ver-ver-vers-verself.dhall
 , ./pronouns/vi-vim-vir-virs-vimself.dhall
 , ./pronouns/vi-vim-vim-vims-vimself.dhall
+, ./pronouns/xae-xaer-xaer-xaers-xaerself.dhall
+, ./pronouns/xae-xem-xaer-xaers-xaerself.dhall
+, ./pronouns/xae-xaem-xaer-xaers-xaerself.dhall
 , ./pronouns/xie-xer-xer-xers-xerself.dhall
 , ./pronouns/xe-xem-xyr-xyrs-xemself.dhall
 , ./pronouns/xe-xer-xer-xers-xerself.dhall
