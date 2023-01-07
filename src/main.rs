@@ -46,9 +46,7 @@ async fn main() -> anyhow::Result<()> {
 async fn all_pronouns_json(
     State(prons): State<PronounTrie>
 ) -> Json<Vec<PronounSet>> {
-    let result = prons.guess(&mut Vec::new());
-
-    Json(result)
+    Json(prons.gather())
 }
 
 async fn exact_pronouns_json(Path(ps): Path<PronounSet>) -> Json<PronounSet> {
@@ -142,7 +140,7 @@ async fn guess_pronouns(
 }
 
 async fn all_pronouns(State(prons): State<PronounTrie>) -> Markup {
-    let pronouns = prons.guess(&mut Vec::new());
+    let pronouns = prons.gather();
     let dsp = pronouns.iter()
         .map(|v| (format!("{}/{}", v.nominative, v.accusative), v.url()));
 

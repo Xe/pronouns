@@ -99,9 +99,9 @@ impl PronounTrie {
 
     // Get all strings in the set.
     pub fn gather(&self) -> Vec<PronounSet> {
-        // TODO
-        Vec::new()
+        self.guess(&mut Vec::new())
     }
+
     fn new(inner: String) -> Self {
         Self {
             inner,
