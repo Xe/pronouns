@@ -49,11 +49,7 @@ impl Render for PronounSet {
                 li { "At least I think it was " em{(self.possessive)} "." }
                 li {
                     em{(titlecase::titlecase(&self.nominative))}
-                    " throw"
-                    @if self.singular {
-                        "s"
-                    }
-                    " the frisbee "
+                    " threw the frisbee "
                     @if self.singular {
                         "to"
                     } @else {
@@ -79,7 +75,10 @@ impl Render for PronounSet {
 
 impl PronounSet {
     pub fn url(&self) -> String {
-        format!("/{}/{}/{}/{}/{}", self.nominative, self.accusative, self.determiner, self.possessive, self.reflexive)
+        format!(
+            "/{}/{}/{}/{}/{}",
+            self.nominative, self.accusative, self.determiner, self.possessive, self.reflexive
+        )
     }
 
     pub fn plural(&self) -> bool {
