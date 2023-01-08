@@ -1,4 +1,3 @@
-
 let PronounSet = ../types/PronounSet.dhall
 
 in PronounSet::{
@@ -7,6 +6,5 @@ in PronounSet::{
     , determiner = "their"
     , possessive = "theirs"
     , reflexive = "themselves"
-    , singular = True
+    , singular = False
 }
-            

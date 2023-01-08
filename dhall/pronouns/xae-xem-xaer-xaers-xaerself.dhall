@@ -1,10 +1,10 @@
 let PronounSet = ../types/PronounSet.dhall
 
 in PronounSet::{
-    , nominative = "xe"
+    , nominative = "xae"
     , accusative = "xem"
-    , determiner = "xyr"
-    , possessive = "xyrs"
-    , reflexive = "xemself"
+    , determiner = "xaer"
+    , possessive = "xaers"
+    , reflexive = "xaerself"
     , singular = True
 }

@@ -108,6 +108,7 @@ async fn guess_pronouns(
             determiner: sp[2].to_string(),
             possessive: sp[3].to_string(),
             reflexive: sp[4].to_string(),
+            singular: sp[4].ends_with("s"),
         };
 
         let title = format!("{}/{}", ps.nominative, ps.accusative);
@@ -196,6 +197,8 @@ async fn api_docs() -> Markup {
                     dd { "The possessive case. This is the case that is used when the pronoun replaces a noun or a noun phrase." }
                     dt { "reflexive" }
                     dd { "The reflexive case. This is the case used when one is referring to themselves." }
+                    dt { "singular" }
+                    dd { "This is true if the pronoun should be used in a singular way. This is false if it should be used in a plural way." }
                 }
             }
 
