@@ -133,12 +133,6 @@ impl PronounTrie {
             }
         }
 
-        if search_right {
-            if let Some(right) = self.right.as_ref() {
-                result.extend(right.guess_strings(key));
-            }
-        }
-
         if search_down {
             if let Some(next) = self.next.as_ref() {
                 if !key.is_empty() {
@@ -156,6 +150,12 @@ impl PronounTrie {
                 result.extend(basket.collect::<Vec<(Vec<String>, Option<bool>)>>());
             } else {
                 result.extend(vec![(vec![self.inner.clone()], self.singular)]);
+            }
+        }
+
+        if search_right {
+            if let Some(right) = self.right.as_ref() {
+                result.extend(right.guess_strings(key));
             }
         }
 
