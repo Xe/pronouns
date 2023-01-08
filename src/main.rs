@@ -142,6 +142,7 @@ async fn guess_pronouns(
             determiner: sp[2].to_string(),
             possessive: sp[3].to_string(),
             reflexive: sp[4].to_string(),
+            singular: sp[4].ends_with("s"),
         };
 
         let title = format!("{}/{}", ps.nominative, ps.accusative);
@@ -348,6 +349,8 @@ pub struct PronounSet {
     determiner: String,
     possessive: String,
     reflexive: String,
+    #[serde(default)]
+    singular: bool,
 }
 
 impl Render for PronounSet {
@@ -381,7 +384,31 @@ impl Render for PronounSet {
                 li { "I went with " i{(self.accusative)} "." }
                 li { em{(titlecase::titlecase(&self.nominative))} " brought " em{(self.determiner)} " frisbee." }
                 li { "At least I think it was " em{(self.possessive)} "." }
-                li { em{(titlecase::titlecase(&self.nominative))} " threw the frisbee to " em{(self.reflexive)} "." }
+                li {
+                    em{(titlecase::titlecase(&self.nominative))}
+                    " throw"
+                    @if !self.singular {
+                        "s"
+                    }
+                    " the frisbee "
+                    @if self.singular {
+                        "to"
+                    } @else {
+                        "between"
+                    }
+                    " "
+                    em{(self.reflexive)}
+                    "."
+                }
+            }
+            p {
+                "This pronoun should be inflected as a "
+                @if self.singular {
+                    "singular"
+                } @else {
+                    "plural"
+                }
+                " pronoun."
             }
         }
     }

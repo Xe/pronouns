@@ -1,4 +1,3 @@
-
 let PronounSet = ../types/PronounSet.dhall
 
 in PronounSet::{
@@ -9,4 +8,3 @@ in PronounSet::{
     , reflexive = "faerself"
     , singular = True
 }
-            

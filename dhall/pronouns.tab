@@ -1,45 +1,45 @@
-she	her	her	hers	herself
-he	him	his	his	himself
-they	them	their	theirs	themselves
-ze	hir	hir	hirs	hirself
-ze	zir	zir	zirs	zirself
-xey	xem	xyr	xyrs	xemself
-ae	aer	aer	aers	aerself
-e	em	eir	eirs	emself
-ey	em	eir	eirs	eirself
-fae	faer	faer	faers	faerself
-fey	fem	feir	feirs	feirself
-hu	hum	hus	hus	humself
-it	it	its	its	itself
-jee	jem	jeir	jeirs	jemself
-kit	kit	kits	kits	kitself
-ne	nem	nir	nirs	nemself
-peh	pehm	peh's	peh's	pehself
-per	per	per	pers	perself
-sie	hir	hir	hirs	hirself
-se	sim	ser	sers	serself
-shi	hir	hir	hirs	hirself
-si	hyr	hyr	hyrs	hyrself
-star	star	stars	stars	starself
-they	them	their	theirs	themself
-thon	thon	thons	thons	thonself
-ve	ver	vis	vis	verself
-ve	vem	vir	virs	vemself
-vi	ver	ver	vers	verself
-vi	vim	vir	virs	vimself
-vi	vim	vim	vims	vimself
-xae	xaer	xaer	xaers	xaerself
-xae	xem	xaer	xaers	xaerself
-xae	xaem	xaer	xaers	xaerself
-xie	xer	xer	xers	xerself
-xe	xem	xyr	xyrs	xemself
-xe	xer	xer	xers	xerself
-xey	xem	xeir	xeirs	xemself
-yo	yo	yos	yos	yosself
-ze	zem	zes	zes	zirself
-ze	mer	zer	zers	zemself
-zee	zed	zeta	zetas	zedself
-zie	zir	zir	zirs	zirself
-zie	zem	zes	zes	zirself
-zie	hir	hir	hirs	hirself
-zme	zmyr	zmyr	zmyrs	zmyrself
+she	her	her	hers	herself	True
+he	him	his	his	himself	True
+they	them	their	theirs	themselves	False
+ze	hir	hir	hirs	hirself	True
+ze	zir	zir	zirs	zirself	True
+xey	xem	xyr	xyrs	xemself	True
+ae	aer	aer	aers	aerself	True
+e	em	eir	eirs	emself	True
+ey	em	eir	eirs	eirself	True
+fae	faer	faer	faers	faerself	True
+fey	fem	feir	feirs	feirself	True
+hu	hum	hus	hus	humself	True
+it	it	its	its	itself	True
+jee	jem	jeir	jeirs	jemself	True
+kit	kit	kits	kits	kitself	True
+ne	nem	nir	nirs	nemself	True
+peh	pehm	peh's	peh's	pehself	True
+per	per	per	pers	perself	True
+sie	hir	hir	hirs	hirself	True
+se	sim	ser	sers	serself	True
+shi	hir	hir	hirs	hirself	True
+si	hyr	hyr	hyrs	hyrself	True
+star	star	stars	stars	starself	True
+they	them	their	theirs	themself	True
+thon	thon	thons	thons	thonself	True
+ve	ver	vis	vis	verself	True
+ve	vem	vir	virs	vemself	True
+vi	ver	ver	vers	verself	True
+vi	vim	vir	virs	vimself	True
+vi	vim	vim	vims	vimself	True
+xae	xaer	xaer	xaers	xaerself	True
+xae	xem	xaer	xaers	xaerself	True
+xae	xaem	xaer	xaers	xaerself	True
+xie	xer	xer	xers	xerself	True
+xe	xem	xyr	xyrs	xemself	True
+xe	xer	xer	xers	xerself	True
+xey	xem	xeir	xeirs	xemself	True
+yo	yo	yos	yos	yosself	True
+ze	zem	zes	zes	zirself	True
+ze	mer	zer	zers	zemself	True
+zee	zed	zeta	zetas	zedself	True
+zie	zir	zir	zirs	zirself	True
+zie	zem	zes	zes	zirself	True
+zie	hir	hir	hirs	hirself	True
+zme	zmyr	zmyr	zmyrs	zmyrself	True

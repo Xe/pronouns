@@ -5,14 +5,13 @@ files = []
 with open("./pronouns.tab") as fin:
     rdr = csv.reader(fin, delimiter="\t")
     for row in rdr:
-        nom, acc, gen, pos, ref = row
+        nom, acc, gen, pos, ref, singular = row
 
         fname = f"pronouns/{nom}-{acc}-{gen}-{pos}-{ref}.dhall"
         fname = fname.replace("'", "_")
 
         with open(fname, "w") as fout:
-            fout.write(f"""
-let PronounSet = ../types/PronounSet.dhall
+            fout.write(f"""let PronounSet = ../types/PronounSet.dhall
 
 in PronounSet::{{
     , nominative = "{nom}"
@@ -20,9 +19,8 @@ in PronounSet::{{
     , determiner = "{gen}"
     , possessive = "{pos}"
     , reflexive = "{ref}"
-    , singular = True
-}}
-            """)
+    , singular = {singular}
+}}""")
 
         files.append(fname)
 
