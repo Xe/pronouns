@@ -387,7 +387,7 @@ impl Render for PronounSet {
                 li {
                     em{(titlecase::titlecase(&self.nominative))}
                     " throw"
-                    @if !self.singular {
+                    @if self.singular {
                         "s"
                     }
                     " the frisbee "
