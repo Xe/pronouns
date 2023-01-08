@@ -117,7 +117,7 @@ impl PronounTrie {
     }
 
     fn guess_strings(&self, key: &mut Vec<Option<String>>) -> Vec<IntPron> {
-        let car = key.get(0).map(|x| x.as_ref()).clone().flatten();
+        let car = key.get(0).and_then(|x| x.as_ref());
 
         let wildcard = car.is_none();
 

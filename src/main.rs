@@ -66,7 +66,7 @@ async fn guess_pronouns_json(
     let guessed = prons.guess(&mut key);
 
     if !guessed.is_empty() {
-        Ok((StatusCode::OK, Json(guessed.clone())))
+        Ok((StatusCode::OK, Json(guessed)))
     } else {
         Err((
             StatusCode::NOT_FOUND,
@@ -100,7 +100,7 @@ async fn guess_pronouns(
         );
     }
 
-    let sp = pronoun.split("/").collect::<Vec<&str>>();
+    let sp = pronoun.split('/').collect::<Vec<&str>>();
     if sp.len() == 5 {
         let ps = PronounSet {
             nominative: sp[0].to_string(),
@@ -108,7 +108,7 @@ async fn guess_pronouns(
             determiner: sp[2].to_string(),
             possessive: sp[3].to_string(),
             reflexive: sp[4].to_string(),
-            singular: sp[4].ends_with("s"),
+            singular: sp[4].ends_with('s'),
         };
 
         let title = format!("{}/{}", ps.nominative, ps.accusative);
@@ -126,7 +126,7 @@ async fn guess_pronouns(
     (
         StatusCode::NOT_FOUND,
         base(
-            Some(&format!("Can't find that pronoun")),
+            Some("Can't find that pronoun"),
             html! {
                 p {
                     "oopsie whoopsie uwu u did a fucky-wucky a widdle fucko boingo! This service doesn't have pronouns for "
@@ -304,7 +304,7 @@ fn base(title: Option<&str>, body: Markup) -> Markup {
 }
 
 fn url_to_trie_query(url: String) -> Vec<Option<String>> {
-    url.split("/").map(|x| match x {
+    url.split('/').map(|x| match x {
         "..." | "" => None,
         x => Some(x.to_owned())
     }).collect()

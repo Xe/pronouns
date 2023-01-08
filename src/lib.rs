@@ -83,6 +83,6 @@ impl PronounSet {
     }
 
     pub fn plural(&self) -> bool {
-        self.determiner.ends_with("s")
+        self.determiner.ends_with('s')
     }
 }
