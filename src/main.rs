@@ -5,29 +5,17 @@ use axum::{
     Json, Router,
 };
 use axum_extra::routing::SpaRouter;
-use maud::{html, Markup, Render, DOCTYPE};
-use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, net::SocketAddr};
+use maud::{html, Markup, DOCTYPE};
+use serde::Serialize;
+use std::net::SocketAddr;
+
+use pronouns::{PronounSet, PronounTrie};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let pronouns: Vec<PronounSet> = serde_dhall::from_file("./dhall/package.dhall").parse()?;
 
-    let mut pron_map: HashMap<String, PronounSet> = HashMap::new();
-
-    for pronoun in pronouns {
-        pron_map.insert(
-            format!(
-                "{}/{}/{}/{}/{}",
-                pronoun.nominative,
-                pronoun.accusative,
-                pronoun.determiner,
-                pronoun.possessive,
-                pronoun.reflexive
-            ),
-            pronoun,
-        );
-    }
+    let pron_trie = PronounTrie::build(pronouns);
 
     let files = SpaRouter::new("/static/css", env!("XESS_PATH"));
 
@@ -43,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/", get(handler))
         .route("/*pronoun", get(guess_pronouns))
         .merge(files)
-        .with_state(pron_map);
+        .with_state(pron_trie);
 
     // run it
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -56,15 +44,9 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn all_pronouns_json(
-    State(prons): State<HashMap<String, PronounSet>>,
+    State(prons): State<PronounTrie>
 ) -> Json<Vec<PronounSet>> {
-    let mut result: Vec<PronounSet> = vec![];
-
-    for (_, v) in &prons {
-        result.push(v.clone())
-    }
-
-    Json(result)
+    Json(prons.gather())
 }
 
 async fn exact_pronouns_json(Path(ps): Path<PronounSet>) -> Json<PronounSet> {
@@ -78,63 +60,47 @@ pub struct Error {
 
 async fn guess_pronouns_json(
     Path(pronoun): Path<String>,
-    State(prons): State<HashMap<String, PronounSet>>,
-) -> Result<(StatusCode, Json<PronounSet>), (StatusCode, Json<Error>)> {
-    if pronoun == "they/.../themselves" {
-        if let Some(v) = prons.get("they/them/their/theirs/themselves") {
-            return Ok((StatusCode::OK, Json(v.clone())));
-        }
-    }
+    State(prons): State<PronounTrie>,
+) -> Result<(StatusCode, Json<Vec<PronounSet>>), (StatusCode, Json<Error>)> {
+    let mut key = url_to_trie_query(pronoun.clone());
+    let guessed = prons.guess(&mut key);
 
-    for (k, v) in &prons {
-        if k.starts_with(&pronoun) {
-            return Ok((StatusCode::OK, Json(v.clone())));
-        }
+    if !guessed.is_empty() {
+        Ok((StatusCode::OK, Json(guessed)))
+    } else {
+        Err((
+            StatusCode::NOT_FOUND,
+            Json(Error {
+                message: format!("can't find {pronoun} in my database"),
+            }),
+        ))
     }
-
-    Err((
-        StatusCode::NOT_FOUND,
-        Json(Error {
-            message: format!("can't find {pronoun} in my database"),
-        }),
-    ))
 }
 
 async fn guess_pronouns(
     Path(pronoun): Path<String>,
-    State(prons): State<HashMap<String, PronounSet>>,
+    State(prons): State<PronounTrie>,
 ) -> (StatusCode, Markup) {
-    if pronoun == "they/.../themselves" {
-        if let Some(v) = prons.get("they/them/their/theirs/themselves") {
-            let title = format!("{}/{}", v.nominative, v.accusative);
-            return (
-                StatusCode::OK,
-                base(
-                    Some(&title),
-                    html! {
-                        (v)
-                    },
-                ),
-            );
-        }
+    let mut key = url_to_trie_query(pronoun.clone());
+    let guessed = prons.guess(&mut key);
+
+    // If we have at least one allowed guess, let's just show the first. This means that
+    // ambiguities are resolved in alphabetical order. (Note that the API will return all matches,
+    // we want a fuzzier/friendlier interface on the web.)
+    if let Some(v) = guessed.last() {
+        let title = format!("{}/{}", v.nominative, v.accusative);
+        return (
+            StatusCode::OK,
+            base(
+                Some(&title),
+                html! {
+                    (v)
+                },
+            ),
+        );
     }
 
-    for (k, v) in &prons {
-        if k.starts_with(&pronoun) {
-            let title = format!("{}/{}", v.nominative, v.accusative);
-            return (
-                StatusCode::OK,
-                base(
-                    Some(&title),
-                    html! {
-                        (v)
-                    },
-                ),
-            );
-        }
-    }
-
-    let sp = pronoun.split("/").collect::<Vec<&str>>();
+    let sp = pronoun.split('/').collect::<Vec<&str>>();
     if sp.len() == 5 {
         let ps = PronounSet {
             nominative: sp[0].to_string(),
@@ -142,7 +108,7 @@ async fn guess_pronouns(
             determiner: sp[2].to_string(),
             possessive: sp[3].to_string(),
             reflexive: sp[4].to_string(),
-            singular: sp[4].ends_with("s"),
+            singular: sp[4].ends_with('s'),
         };
 
         let title = format!("{}/{}", ps.nominative, ps.accusative);
@@ -160,7 +126,7 @@ async fn guess_pronouns(
     (
         StatusCode::NOT_FOUND,
         base(
-            Some(&format!("Can't find that pronoun")),
+            Some("Can't find that pronoun"),
             html! {
                 p {
                     "oopsie whoopsie uwu u did a fucky-wucky a widdle fucko boingo! This service doesn't have pronouns for "
@@ -174,23 +140,16 @@ async fn guess_pronouns(
     )
 }
 
-async fn all_pronouns(State(prons): State<HashMap<String, PronounSet>>) -> Markup {
-    let mut pronouns: Vec<(String, String)> = Vec::new();
-
-    for (k, v) in &prons {
-        pronouns.push((
-            format!("{}/{}", v.nominative, v.accusative),
-            format!("/{k}"),
-        ));
-    }
-
-    pronouns.sort();
+async fn all_pronouns(State(prons): State<PronounTrie>) -> Markup {
+    let pronouns = prons.gather();
+    let dsp = pronouns.iter()
+        .map(|v| (format!("{}/{}", v.nominative, v.accusative), v.url()));
 
     base(
         Some("All pronouns"),
         html! {
             ul {
-                @for (title, link) in &pronouns {
+                @for (title, link) in dsp {
                     li {
                         a href=(link) {(title)}
                     }
@@ -250,7 +209,7 @@ async fn api_docs() -> Markup {
 
             h3 { code { "/api/lookup/{pronouns*}" } }
             p {
-                "This attempts to figure out which pronoun you want and returns information about that PronounSet."
+                "This attempts to figure out which pronoun you want and returns information about each PronounSet matching that description. It returns a list of PronounSet's."
                 br;br;
                 "For example: "
                 a href="/api/lookup/she/her" { "/api/lookup/she/her" }
@@ -344,74 +303,9 @@ fn base(title: Option<&str>, body: Markup) -> Markup {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, Default)]
-pub struct PronounSet {
-    nominative: String,
-    accusative: String,
-    determiner: String,
-    possessive: String,
-    reflexive: String,
-    #[serde(default)]
-    singular: bool,
-}
-
-impl Render for PronounSet {
-    fn render(&self) -> Markup {
-        html! {
-            table {
-                tr {
-                    th { "Subject" }
-                    td {(self.nominative)}
-                }
-                tr {
-                    th { "Object" }
-                    td {(self.accusative)}
-                }
-                tr {
-                    th { "Dependent Possessive" }
-                    td {(self.determiner)}
-                }
-                tr {
-                    th { "Independent Possessive" }
-                    td {(self.possessive)}
-                }
-                tr {
-                    th { "Reflexive" }
-                    td {(self.reflexive)}
-                }
-            }
-            p {"Here are some example sentences with these pronouns:"}
-            ul {
-                li { em{(titlecase::titlecase(&self.nominative))} " went to the park." }
-                li { "I went with " i{(self.accusative)} "." }
-                li { em{(titlecase::titlecase(&self.nominative))} " brought " em{(self.determiner)} " frisbee." }
-                li { "At least I think it was " em{(self.possessive)} "." }
-                li {
-                    em{(titlecase::titlecase(&self.nominative))}
-                    " throw"
-                    @if self.singular {
-                        "s"
-                    }
-                    " the frisbee "
-                    @if self.singular {
-                        "to"
-                    } @else {
-                        "between"
-                    }
-                    " "
-                    em{(self.reflexive)}
-                    "."
-                }
-            }
-            p {
-                "This pronoun should be inflected as a "
-                @if self.singular {
-                    "singular"
-                } @else {
-                    "plural"
-                }
-                " pronoun."
-            }
-        }
-    }
+fn url_to_trie_query(url: String) -> Vec<Option<String>> {
+    url.split('/').map(|x| match x {
+        "..." | "" => None,
+        x => Some(x.to_owned())
+    }).collect()
 }
