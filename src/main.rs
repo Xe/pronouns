@@ -209,7 +209,7 @@ async fn api_docs() -> Markup {
 
             h3 { code { "/api/lookup/{pronouns*}" } }
             p {
-                "This attempts to figure out which pronoun you want and returns information about that PronounSet."
+                "This attempts to figure out which pronoun you want and returns information about each PronounSet matching that description. It returns a list of PronounSet's."
                 br;br;
                 "For example: "
                 a href="/api/lookup/she/her" { "/api/lookup/she/her" }
