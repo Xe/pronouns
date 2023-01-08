@@ -43,13 +43,13 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn all_pronouns_json(
-    State(prons): State<PronounTrie>
-) -> Json<Vec<PronounSet>> {
+async fn all_pronouns_json(State(prons): State<PronounTrie>) -> Json<Vec<PronounSet>> {
     Json(prons.gather())
 }
 
 async fn exact_pronouns_json(Path(ps): Path<PronounSet>) -> Json<PronounSet> {
+    let mut ps = ps.clone();
+    ps.singular = true;
     Json(ps)
 }
 
@@ -108,7 +108,7 @@ async fn guess_pronouns(
             determiner: sp[2].to_string(),
             possessive: sp[3].to_string(),
             reflexive: sp[4].to_string(),
-            singular: sp[4].ends_with('s'),
+            singular: !sp[4].ends_with('s'),
         };
 
         let title = format!("{}/{}", ps.nominative, ps.accusative);
@@ -142,7 +142,8 @@ async fn guess_pronouns(
 
 async fn all_pronouns(State(prons): State<PronounTrie>) -> Markup {
     let pronouns = prons.gather();
-    let dsp = pronouns.iter()
+    let dsp = pronouns
+        .iter()
         .map(|v| (format!("{}/{}", v.nominative, v.accusative), v.url()));
 
     base(
@@ -304,8 +305,10 @@ fn base(title: Option<&str>, body: Markup) -> Markup {
 }
 
 fn url_to_trie_query(url: String) -> Vec<Option<String>> {
-    url.split('/').map(|x| match x {
-        "..." | "" => None,
-        x => Some(x.to_owned())
-    }).collect()
+    url.split('/')
+        .map(|x| match x {
+            "..." | "" => None,
+            x => Some(x.to_owned()),
+        })
+        .collect()
 }
