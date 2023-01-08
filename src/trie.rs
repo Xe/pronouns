@@ -25,7 +25,7 @@ impl PronounTrie {
                 pronoun.reflexive,
             ];
 
-            Self::insert_to_child(&mut base, key, pronoun.singular);
+            Self::insert(&mut base, key, pronoun.singular);
         }
 
         *base.expect("non-empty input list")
@@ -76,38 +76,38 @@ impl PronounTrie {
         }
     }
 
-    fn insert(&mut self, mut key: Vec<String>, singular: bool) {
-        let car = &key[0];
-
-        if car < &self.inner {
-            Self::insert_to_child(&mut self.left, key, singular);
-        } else if car > &self.inner {
-            Self::insert_to_child(&mut self.right, key, singular);
-        } else {
-            // We found where to insert, advance the key.
-            key.remove(0);
-            Self::insert_to_child(&mut self.next, key, singular);
-        }
-    }
-
-    fn insert_to_child(s: &mut Option<Box<Self>>, mut v: Vec<String>, singular: bool) {
+    fn insert(s: &mut Option<Box<Self>>, mut key: Vec<String>, singular: bool) {
         match s {
             None => {
-                let car = v[0].clone();
-                v.remove(0);
-                let cons = v;
+                let car = key[0].clone();
+                key.remove(0);
+                let cons = key;
 
                 let mut child = Self::new(car);
 
                 if !cons.is_empty() {
-                    Self::insert_to_child(&mut child.next, cons, singular);
+                    Self::insert(&mut child.next, cons, singular);
                 } else {
                     child.singular = Some(singular);
                 }
 
                 s.replace(Box::new(child));
             },
-            Some(t) => t.insert(v, singular),
+            Some(s) => {
+                let car = &key[0];
+
+                let s = if car < &s.inner {
+                    &mut s.left
+                } else if car > &s.inner {
+                    &mut s.right
+                } else {
+                    // We found where to insert, advance the key.
+                    key.remove(0);
+                    &mut s.next
+                };
+
+                Self::insert(s, key, singular);
+            },
         };
     }
 
