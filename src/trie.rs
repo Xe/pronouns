@@ -1,5 +1,10 @@
 use super::PronounSet;
 
+/// An intermediate pronoun is either complete and stores an ordered Vec of nominative,
+/// accusative, &c strings, and a boolean plurality indicator. If it is incomplete, the plurality
+/// indicator is None and Vec<String> has fewer than 5 elements.
+type IntPron = (Vec<String>, Option<bool>);
+
 #[derive(Clone, Debug)]
 pub struct PronounTrie {
     inner: String,
@@ -54,7 +59,7 @@ impl PronounTrie {
                 determiner: x[2].clone(),
                 possessive: x[3].clone(),
                 reflexive:  x[4].clone(),
-                singular:   singular.unwrap_or(false),
+                singular:   singular.unwrap(),
             })
         } else {
             None
@@ -111,7 +116,7 @@ impl PronounTrie {
         };
     }
 
-    fn guess_strings(&self, key: &mut Vec<Option<String>>) -> Vec<(Vec<String>, Option<bool>)> {
+    fn guess_strings(&self, key: &mut Vec<Option<String>>) -> Vec<IntPron> {
         let car = key.get(0).map(|x| x.as_ref()).clone().flatten();
 
         let wildcard = car.is_none();
