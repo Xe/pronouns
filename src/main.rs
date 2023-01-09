@@ -180,11 +180,10 @@ async fn api_docs() -> Markup {
             p {
                 "This service offers API calls for looking up pronoun information. All URLs are offered as "
                 a href="https://www.rfc-editor.org/rfc/rfc6570" { "RFC 6570" }
-                " URL templates. Here are the calls offered by this service:"
+                " URL templates. All results will return JSON-formatted values. Here are the calls offered by this service:"
             }
 
             h3 { "PronounSet type" }
-
             p {
                 "The core datatype of the API is the PronounSet. It contains information on all the grammatical cases for each pronoun set. It always has five fields that are as follows:"
                 dl {
@@ -201,11 +200,37 @@ async fn api_docs() -> Markup {
                     dt { "singular" }
                     dd { "This is true if the pronoun should be used in a singular way. This is false if it should be used in a plural way." }
                 }
+                "PronounSet responses are only returned when the HTTP status is 200."
+            }
+            h4 { "Example" }
+            pre {
+                code {
+                    "{\n  \"nominative\": \"she\",\n  \"accusative\": \"her\",\n  \"determiner\": \"her\",\n  \"possessive\": \"hers\",\n  \"reflexive\": \"herself\",\n  \"singular\": true\n}"
+                }
+            }
+
+            h3 { "Error type" }
+            p {
+                "Sometimes the service may return an error if it can't find what you're asking it. This error type will only contain a field named "
+                code { "message" }
+                " that contains a human-readable message to explain the failure. This will accompany a non-200 response."
+            }
+            h4 { "Example" }
+            pre {
+                code {
+                    "{\n  \"message\": \"can't find she/his in my database\"\n}"
+                }
             }
 
             h3 { code { "/api/all" } }
             p {
                 "This returns all information on all pronouns in the database in a list of PronounSet values."
+            }
+            h4 { "Example" }
+            pre {
+                code {
+                    "curl https://pronouns.within.lgbt/api/all"
+                }
             }
 
             h3 { code { "/api/lookup/{pronouns*}" } }
@@ -218,6 +243,13 @@ async fn api_docs() -> Markup {
                 a href="/she/her" { "/she/her" }
                 "."
             }
+            h4 { "Example" }
+            pre {
+                code {
+                    "curl https://pronouns.within.lgbt/api/lookup/she"
+                    "\n[\n  {\n    \"nominative\": \"she\",\n    \"accusative\": \"her\",\n    \"determiner\": \"her\",\n    \"possessive\": \"hers\",\n    \"reflexive\": \"herself\",\n    \"singular\": true\n  }\n]"
+                }
+            }
 
             h3 { code { "/api/exact/{nom}/{acc}/{det}/{pos}/{ref}" } }
             p {
@@ -228,6 +260,13 @@ async fn api_docs() -> Markup {
                 " will return the same information as "
                 a href="/char/char/char/chars/charself" { "/char/char/char/chars/charself" }
                 "."
+            }
+            h4 { "Example" }
+            pre {
+                code {
+                    "curl https://pronouns.within.lgbt/api/exact/char/char/char/chars/charself"
+                    "\n{\n  \"nominative\": \"char\",\n  \"accusative\": \"char\",\n  \"determiner\": \"char\",\n  \"possessive\": \"chars\",\n  \"reflexive\": \"charself\",\n  \"singular\": true\n}"
+                }
             }
         },
     )
