@@ -81,6 +81,10 @@ impl PronounSet {
         )
     }
 
+    pub fn title(&self) -> String {
+        format!("{}/{}", self.nominative, self.accusative)
+    }
+
     pub fn plural(&self) -> bool {
         self.determiner.ends_with('s')
     }

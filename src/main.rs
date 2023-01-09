@@ -29,6 +29,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .route("/pronoun-list", get(all_pronouns))
         .route("/", get(handler))
+        .route("/they", get(they))
         .route("/*pronoun", get(guess_pronouns))
         .merge(files)
         .with_state(pron_trie);
@@ -77,12 +78,38 @@ async fn guess_pronouns_json(
     }
 }
 
+async fn they(prons: State<PronounTrie>) -> (StatusCode, Markup) {
+    guess_pronouns(Path("they/.../themselves".to_string()), prons).await
+}
+
 async fn guess_pronouns(
     Path(pronoun): Path<String>,
     State(prons): State<PronounTrie>,
 ) -> (StatusCode, Markup) {
     let mut key = url_to_trie_query(pronoun.clone());
     let guessed = prons.guess(&mut key);
+
+    if guessed.len() > 1 {
+        return (
+            StatusCode::BAD_REQUEST,
+            base(
+                Some("Ambiguous pronouns detected"),
+                html! {
+                    p {
+                        "The pronoun you are looking up ("
+                        (pronoun)
+                        ") has multiple hits in the database. Please try one of the following options:"
+                    }
+
+                    ul {
+                        @for hit in guessed {
+                            li { a href=(hit.url()) {(hit.title())} }
+                        }
+                    }
+                },
+            ),
+        );
+    }
 
     // If we have at least one allowed guess, let's just show the first. This means that
     // ambiguities are resolved in alphabetical order. (Note that the API will return all matches,
@@ -142,9 +169,7 @@ async fn guess_pronouns(
 
 async fn all_pronouns(State(prons): State<PronounTrie>) -> Markup {
     let pronouns = prons.gather();
-    let dsp = pronouns
-        .iter()
-        .map(|v| (format!("{}/{}", v.nominative, v.accusative), v.url()));
+    let dsp = pronouns.iter().map(|v| (v.title(), v.url()));
 
     base(
         Some("All pronouns"),
