@@ -6,6 +6,7 @@
 , ./pronouns/ze-zir-zir-zirs-zirself.dhall
 , ./pronouns/xey-xem-xyr-xyrs-xemself.dhall
 , ./pronouns/ae-aer-aer-aers-aerself.dhall
+, ./pronouns/bun-bun-buns-buns-bunself.dhall
 , ./pronouns/e-em-eir-eirs-emself.dhall
 , ./pronouns/ey-em-eir-eirs-eirself.dhall
 , ./pronouns/fae-faer-faer-faers-faerself.dhall
