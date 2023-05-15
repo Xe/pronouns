@@ -1,3 +1,4 @@
+use heck::ToTitleCase;
 use maud::{html, Markup, Render};
 use serde::{Deserialize, Serialize};
 
@@ -43,12 +44,12 @@ impl Render for PronounSet {
             }
             p {"Here are some example sentences with these pronouns:"}
             ul {
-                li { em{(titlecase::titlecase(&self.nominative))} " went to the park." }
+                li { em{(self.nominative.to_title_case())} " went to the park." }
                 li { "I went with " i{(self.accusative)} "." }
-                li { em{(titlecase::titlecase(&self.nominative))} " brought " em{(self.determiner)} " frisbee." }
+                li { em{(self.nominative.to_title_case())} " brought " em{(self.determiner)} " frisbee." }
                 li { "At least I think it was " em{(self.possessive)} "." }
                 li {
-                    em{(titlecase::titlecase(&self.nominative))}
+                    em{(self.nominative.to_title_case())}
                     " throw"
                     @if self.singular {
                         "s"
