@@ -5,7 +5,7 @@ mod trie;
 
 pub use trie::PronounTrie;
 
-#[derive(Clone, Deserialize, Serialize, Default, Debug)]
+#[derive(Deserialize, Serialize, Default, Debug)]
 pub struct PronounSet {
     pub nominative: String,
     pub accusative: String,
