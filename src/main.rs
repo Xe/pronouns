@@ -30,6 +30,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .route("/pronoun-list", get(all_pronouns))
         .route("/", get(handler))
+        .route("/they", get(they))
         .route("/*pronoun", get(guess_pronouns))
         .merge(files)
         .with_state(Arc::new(pron_trie));
@@ -51,6 +52,8 @@ async fn all_pronouns_json(
 }
 
 async fn exact_pronouns_json(Path(ps): Path<PronounSet>) -> Json<PronounSet> {
+    let mut ps = ps.clone();
+    ps.singular = true;
     Json(ps)
 }
 
@@ -78,12 +81,38 @@ async fn guess_pronouns_json(
     }
 }
 
+async fn they(prons: State<Arc<PronounTrie>>) -> (StatusCode, Markup) {
+    guess_pronouns(Path("they/.../themselves".to_string()), prons).await
+}
+
 async fn guess_pronouns(
     Path(pronoun): Path<String>,
     State(prons): State<Arc<PronounTrie>>,
 ) -> (StatusCode, Markup) {
     let mut key = url_to_trie_query(pronoun.clone());
     let guessed = prons.guess(&mut key);
+
+    if guessed.len() > 1 {
+        return (
+            StatusCode::BAD_REQUEST,
+            base(
+                Some("Ambiguous pronouns detected"),
+                html! {
+                    p {
+                        "The pronoun you are looking up ("
+                        (pronoun)
+                        ") has multiple hits in the database. Please try one of the following options:"
+                    }
+
+                    ul {
+                        @for hit in guessed {
+                            li { a href=(hit.url()) {(hit.title())} }
+                        }
+                    }
+                },
+            ),
+        );
+    }
 
     // If we have at least one allowed guess, let's just show the first. This means that
     // ambiguities are resolved in alphabetical order. (Note that the API will return all matches,
@@ -109,7 +138,7 @@ async fn guess_pronouns(
             determiner: sp[2].to_string(),
             possessive: sp[3].to_string(),
             reflexive: sp[4].to_string(),
-            singular: sp[4].ends_with('s'),
+            singular: !sp[4].ends_with('s'),
         };
 
         let title = format!("{}/{}", ps.nominative, ps.accusative);
@@ -143,8 +172,7 @@ async fn guess_pronouns(
 
 async fn all_pronouns(State(prons): State<Arc<PronounTrie>>) -> Markup {
     let pronouns = prons.gather();
-    let dsp = pronouns.iter()
-        .map(|v| (format!("{}/{}", v.nominative, v.accusative), v.url()));
+    let dsp = pronouns.iter().map(|v| (v.title(), v.url()));
 
     base(
         Some("All pronouns"),
@@ -180,11 +208,10 @@ async fn api_docs() -> Markup {
             p {
                 "This service offers API calls for looking up pronoun information. All URLs are offered as "
                 a href="https://www.rfc-editor.org/rfc/rfc6570" { "RFC 6570" }
-                " URL templates. Here are the calls offered by this service:"
+                " URL templates. All results will return JSON-formatted values. Here are the calls offered by this service:"
             }
 
             h3 { "PronounSet type" }
-
             p {
                 "The core datatype of the API is the PronounSet. It contains information on all the grammatical cases for each pronoun set. It always has five fields that are as follows:"
                 dl {
@@ -201,11 +228,37 @@ async fn api_docs() -> Markup {
                     dt { "singular" }
                     dd { "This is true if the pronoun should be used in a singular way. This is false if it should be used in a plural way." }
                 }
+                "PronounSet responses are only returned when the HTTP status is 200."
+            }
+            h4 { "Example" }
+            pre {
+                code {
+                    "{\n  \"nominative\": \"she\",\n  \"accusative\": \"her\",\n  \"determiner\": \"her\",\n  \"possessive\": \"hers\",\n  \"reflexive\": \"herself\",\n  \"singular\": true\n}"
+                }
+            }
+
+            h3 { "Error type" }
+            p {
+                "Sometimes the service may return an error if it can't find what you're asking it. This error type will only contain a field named "
+                code { "message" }
+                " that contains a human-readable message to explain the failure. This will accompany a non-200 response."
+            }
+            h4 { "Example" }
+            pre {
+                code {
+                    "{\n  \"message\": \"can't find she/his in my database\"\n}"
+                }
             }
 
             h3 { code { "/api/all" } }
             p {
                 "This returns all information on all pronouns in the database in a list of PronounSet values."
+            }
+            h4 { "Example" }
+            pre {
+                code {
+                    "curl https://pronouns.within.lgbt/api/all"
+                }
             }
 
             h3 { code { "/api/lookup/{pronouns*}" } }
@@ -218,6 +271,13 @@ async fn api_docs() -> Markup {
                 a href="/she/her" { "/she/her" }
                 "."
             }
+            h4 { "Example" }
+            pre {
+                code {
+                    "curl https://pronouns.within.lgbt/api/lookup/she"
+                    "\n[\n  {\n    \"nominative\": \"she\",\n    \"accusative\": \"her\",\n    \"determiner\": \"her\",\n    \"possessive\": \"hers\",\n    \"reflexive\": \"herself\",\n    \"singular\": true\n  }\n]"
+                }
+            }
 
             h3 { code { "/api/exact/{nom}/{acc}/{det}/{pos}/{ref}" } }
             p {
@@ -228,6 +288,13 @@ async fn api_docs() -> Markup {
                 " will return the same information as "
                 a href="/char/char/char/chars/charself" { "/char/char/char/chars/charself" }
                 "."
+            }
+            h4 { "Example" }
+            pre {
+                code {
+                    "curl https://pronouns.within.lgbt/api/exact/char/char/char/chars/charself"
+                    "\n{\n  \"nominative\": \"char\",\n  \"accusative\": \"char\",\n  \"determiner\": \"char\",\n  \"possessive\": \"chars\",\n  \"reflexive\": \"charself\",\n  \"singular\": true\n}"
+                }
             }
         },
     )
@@ -305,8 +372,10 @@ fn base(title: Option<&str>, body: Markup) -> Markup {
 }
 
 fn url_to_trie_query(url: String) -> Vec<Option<String>> {
-    url.split('/').map(|x| match x {
-        "..." | "" => None,
-        x => Some(x.to_owned())
-    }).collect()
+    url.split('/')
+        .map(|x| match x {
+            "..." | "" => None,
+            x => Some(x.to_owned()),
+        })
+        .collect()
 }

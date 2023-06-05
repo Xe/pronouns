@@ -6,23 +6,23 @@ terraform {
   }
 }
 
-data "aws_route53_zone" "dns" {
-  name = "within.lgbt."
+data "dns_a_record_set" "app" {
+  host = "xe-pronouns.fly.dev"
 }
 
-resource "aws_route53_record" "pronouns_challenge_CNAME" {
-  zone_id = data.aws_route53_zone.dns.zone_id
-  name    = "_acme-challenge.pronouns.within.lgbt."
-  type    = "CNAME"
-  records = ["pronouns.within.lgbt.qxdl2p.flydns.net."]
-  ttl     = 300
+data "dns_aaaa_record_set" "app" {
+  host = "xe-pronouns.fly.dev"
+}
+
+data "aws_route53_zone" "dns" {
+  name = "within.lgbt."
 }
 
 resource "aws_route53_record" "pronouns_A" {
   zone_id = data.aws_route53_zone.dns.zone_id
   name    = "pronouns.within.lgbt."
   type    = "A"
-  records = ["66.241.125.29"]
+  records = data.dns_a_record_set.app.addrs
   ttl     = 300
 }
 
@@ -30,6 +30,6 @@ resource "aws_route53_record" "pronouns_AAAA" {
   zone_id = data.aws_route53_zone.dns.zone_id
   name    = "pronouns.within.lgbt."
   type    = "AAAA"
-  records = ["2a09:8280:1::a:c347"]
+  records = data.dns_aaaa_record_set.app.addrs
   ttl     = 300
 }

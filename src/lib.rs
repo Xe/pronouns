@@ -6,7 +6,7 @@ mod trie;
 
 pub use trie::PronounTrie;
 
-#[derive(Deserialize, Serialize, Default, Debug)]
+#[derive(Clone, Deserialize, Serialize, Default, Debug)]
 pub struct PronounSet {
     pub nominative: String,
     pub accusative: String,
@@ -50,11 +50,7 @@ impl Render for PronounSet {
                 li { "At least I think it was " em{(self.possessive)} "." }
                 li {
                     em{(self.nominative.to_title_case())}
-                    " throw"
-                    @if self.singular {
-                        "s"
-                    }
-                    " the frisbee "
+                    " threw the frisbee "
                     @if self.singular {
                         "to"
                     } @else {
@@ -80,7 +76,14 @@ impl Render for PronounSet {
 
 impl PronounSet {
     pub fn url(&self) -> String {
-        format!("/{}/{}/{}/{}/{}", self.nominative, self.accusative, self.determiner, self.possessive, self.reflexive)
+        format!(
+            "/{}/{}/{}/{}/{}",
+            self.nominative, self.accusative, self.determiner, self.possessive, self.reflexive
+        )
+    }
+
+    pub fn title(&self) -> String {
+        format!("{}/{}", self.nominative, self.accusative)
     }
 
     pub fn plural(&self) -> bool {
