@@ -7,8 +7,7 @@ use axum::{
 use axum_extra::routing::SpaRouter;
 use maud::{html, Markup, DOCTYPE};
 use serde::Serialize;
-use std::net::SocketAddr;
-use std::sync::Arc;
+use std::{net::SocketAddr, sync::Mutex, sync::Arc};
 
 use pronouns::{PronounSet, PronounTrie};
 
@@ -21,6 +20,7 @@ async fn main() -> anyhow::Result<()> {
     let files = SpaRouter::new("/static/css", env!("XESS_PATH"));
 
     let app = Router::new()
+        .route("/.within/health", get(health))
         .route("/api/all", get(all_pronouns_json))
         .route("/api/docs", get(api_docs))
         .route("/api/lookup/*pronoun", get(guess_pronouns_json))
@@ -38,11 +38,31 @@ async fn main() -> anyhow::Result<()> {
     // run it
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    let server = axum::Server::bind(&addr).serve(app.into_make_service());
+
+    // Prepare some signal for when the server should start shutting down...
+    let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+    let graceful = server.with_graceful_shutdown(async {
+        rx.await.ok();
+    });
+
+    let tx = Mutex::new(Some(tx));
+    ctrlc::set_handler(move || {
+        println!("received Ctrl+C!");
+        if let Some(tx) = tx.lock().unwrap().take() { tx.send(()).unwrap(); }
+    })
+    .expect("Error setting Ctrl-C handler");
+
+    // Await the `server` receiving the signal...
+    if let Err(e) = graceful.await {
+        eprintln!("server error: {}", e);
+    }
 
     Ok(())
+}
+
+async fn health() -> String {
+    "OK".into()
 }
 
 async fn all_pronouns_json(
