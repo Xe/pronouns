@@ -47,11 +47,6 @@ async fn main() -> anyhow::Result<()> {
     });
 
     let tx = Mutex::new(Some(tx));
-    ctrlc::set_handler(move || {
-        println!("received Ctrl+C!");
-        if let Some(tx) = tx.lock().unwrap().take() { tx.send(()).unwrap(); }
-    })
-    .expect("Error setting Ctrl-C handler");
 
     // Await the `server` receiving the signal...
     if let Err(e) = graceful.await {
