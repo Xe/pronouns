@@ -7,7 +7,7 @@ use axum::{
 use axum_extra::routing::SpaRouter;
 use maud::{html, Markup, DOCTYPE};
 use serde::Serialize;
-use std::{net::SocketAddr, sync::Mutex};
+use std::{net::SocketAddr, sync::Mutex, sync::Arc};
 
 use pronouns::{PronounSet, PronounTrie};
 
@@ -33,7 +33,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/they", get(they))
         .route("/*pronoun", get(guess_pronouns))
         .merge(files)
-        .with_state(pron_trie);
+        .with_state(Arc::new(pron_trie));
 
     // run it
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -60,7 +60,9 @@ async fn health() -> String {
     "OK".into()
 }
 
-async fn all_pronouns_json(State(prons): State<PronounTrie>) -> Json<Vec<PronounSet>> {
+async fn all_pronouns_json(
+    State(prons): State<Arc<PronounTrie>>
+) -> Json<Vec<PronounSet>> {
     Json(prons.gather())
 }
 
@@ -77,7 +79,7 @@ pub struct Error {
 
 async fn guess_pronouns_json(
     Path(pronoun): Path<String>,
-    State(prons): State<PronounTrie>,
+    State(prons): State<Arc<PronounTrie>>,
 ) -> Result<(StatusCode, Json<Vec<PronounSet>>), (StatusCode, Json<Error>)> {
     let mut key = url_to_trie_query(pronoun.clone());
     let guessed = prons.guess(&mut key);
@@ -94,13 +96,13 @@ async fn guess_pronouns_json(
     }
 }
 
-async fn they(prons: State<PronounTrie>) -> (StatusCode, Markup) {
+async fn they(prons: State<Arc<PronounTrie>>) -> (StatusCode, Markup) {
     guess_pronouns(Path("they/.../themselves".to_string()), prons).await
 }
 
 async fn guess_pronouns(
     Path(pronoun): Path<String>,
-    State(prons): State<PronounTrie>,
+    State(prons): State<Arc<PronounTrie>>,
 ) -> (StatusCode, Markup) {
     let mut key = url_to_trie_query(pronoun.clone());
     let guessed = prons.guess(&mut key);
@@ -183,7 +185,7 @@ async fn guess_pronouns(
     )
 }
 
-async fn all_pronouns(State(prons): State<PronounTrie>) -> Markup {
+async fn all_pronouns(State(prons): State<Arc<PronounTrie>>) -> Markup {
     let pronouns = prons.gather();
     let dsp = pronouns.iter().map(|v| (v.title(), v.url()));
 

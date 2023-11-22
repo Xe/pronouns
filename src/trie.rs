@@ -5,7 +5,7 @@ use super::PronounSet;
 /// indicator is None and Vec<String> has fewer than 5 elements.
 type IntPron = (Vec<String>, Option<bool>);
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct PronounTrie {
     inner: String,
     left:  Option<Box<PronounTrie>>,
