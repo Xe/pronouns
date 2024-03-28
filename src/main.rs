@@ -7,7 +7,7 @@ use axum::{
 use axum_extra::routing::SpaRouter;
 use maud::{html, Markup, DOCTYPE};
 use serde::Serialize;
-use std::{net::SocketAddr, sync::Mutex, sync::Arc};
+use std::{env, net::SocketAddr, sync::Mutex, sync::Arc};
 
 use pronouns::{PronounSet, PronounTrie};
 
@@ -58,6 +58,14 @@ async fn main() -> anyhow::Result<()> {
 
 async fn health() -> String {
     "OK".into()
+}
+
+// unused for now; need to figure out how to call this in a Maud template
+async fn get_domain() -> String {
+    match env::var("PRONOUNS_DOMAIN") {
+        Ok(val) => val,
+        Err(_e) => "pronouns.within.lgbt".to_string(),
+    }
 }
 
 async fn all_pronouns_json(
@@ -205,7 +213,12 @@ async fn all_pronouns(State(prons): State<Arc<PronounTrie>>) -> Markup {
                     br;br;
                 code {
                     pre {
-                        "https://pronouns.within.lgbt/subject/object/determiner/possessive/reflexive"
+                        "https://" ({
+                            match env::var("PRONOUN_DOMAIN") {
+                                Ok(val) => val,
+                                Err(_e) => "pronouns.within.lgbt".to_string(),
+                            }
+                        }) "/subject/object/determiner/possessive/reflexive"
                     }
                 }
                 "If you want that set added to the website, please contact "
@@ -272,7 +285,12 @@ async fn api_docs() -> Markup {
             h4 { "Example" }
             pre {
                 code {
-                    "curl https://pronouns.within.lgbt/api/all"
+                    "curl https://" ({
+                        match env::var("PRONOUN_DOMAIN") {
+                            Ok(val) => val,
+                            Err(_e) => "pronouns.within.lgbt".to_string(),
+                        }
+                    }) "/api/all"
                 }
             }
 
@@ -289,7 +307,12 @@ async fn api_docs() -> Markup {
             h4 { "Example" }
             pre {
                 code {
-                    "curl https://pronouns.within.lgbt/api/lookup/she"
+                    "curl https://" ({
+                        match env::var("PRONOUN_DOMAIN") {
+                            Ok(val) => val,
+                            Err(_e) => "pronouns.within.lgbt".to_string(),
+                        }
+                    }) "/api/lookup/she"
                     "\n[\n  {\n    \"nominative\": \"she\",\n    \"accusative\": \"her\",\n    \"determiner\": \"her\",\n    \"possessive\": \"hers\",\n    \"reflexive\": \"herself\",\n    \"singular\": true\n  }\n]"
                 }
             }
@@ -307,7 +330,12 @@ async fn api_docs() -> Markup {
             h4 { "Example" }
             pre {
                 code {
-                    "curl https://pronouns.within.lgbt/api/exact/char/char/char/chars/charself"
+                    "curl https://" ({
+                        match env::var("PRONOUN_DOMAIN") {
+                            Ok(val) => val,
+                            Err(_e) => "pronouns.within.lgbt".to_string(),
+                        }
+                    }) "/api/exact/char/char/char/chars/charself"
                     "\n{\n  \"nominative\": \"char\",\n  \"accusative\": \"char\",\n  \"determiner\": \"char\",\n  \"possessive\": \"chars\",\n  \"reflexive\": \"charself\",\n  \"singular\": true\n}"
                 }
             }
@@ -332,7 +360,12 @@ async fn handler() -> Markup {
                 br;br;
                 code {
                     pre {
-                        "https://pronouns.within.lgbt/subject/object/determiner/possessive/reflexive"
+                        "https://" ({
+                            match env::var("PRONOUN_DOMAIN") {
+                                Ok(val) => val,
+                                Err(_e) => "pronouns.within.lgbt".to_string(),
+                            }
+                        }) "/subject/object/determiner/possessive/reflexive"
                     }
                 }
                 "This is a bit verbose, but it will work."
