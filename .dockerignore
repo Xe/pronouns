@@ -8,3 +8,5 @@
 
 target
 fly.toml
+terraform
+manifest

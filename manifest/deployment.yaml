@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pronouns
+spec:
+  selector:
+    matchLabels:
+      app: pronouns
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: pronouns
+    spec:
+      containers:
+      - name: web
+        image: reg.xeiaso.net/xe/pronouns
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
