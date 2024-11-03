@@ -6,3 +6,4 @@ target
 # Added by cargo
 
 /target
+.terraform
