@@ -3,8 +3,16 @@
 {
 	"name": "Debian",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"cacheFrom": [
+			"type=registry,ref=ghcr.io/xe/pronouns/devcontainer"
+		]
+	},
 	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"configureZshAsDefaultShell": false
+		},
 		"ghcr.io/devcontainers/features/rust:1": {
 			"version": "latest",
 			"profile": "minimal",
@@ -23,6 +31,9 @@
 			"target": "/home/vscode/.local/share/atuin"
 		}
 	],
+	"containerEnv": {
+		"XESS_PATH": "/workspaces/pronouns/static/css"
+	},
 	"customizations": {
 		"vscode": {
 			"extensions": [
