@@ -1,5 +1,5 @@
 [package]
-name = "pronouns"
+name = "xe_pronouns"
 version = "0.1.0"
 edition = "2021"
 
@@ -20,12 +20,12 @@ tokio = { version = "1", features = ["full"] }
 [dependencies.maud]
 git = "https://github.com/Xe/maud"
 rev = "a40596c42c7603cc4610bbeddea04c4bd8b312d9"
-features = [ "axum" ]
+features = ["axum"]
 
 [dependencies.tower]
 version = "0.4"
-features = [ "full" ]
+features = ["full"]
 
 [dependencies.tower-http]
 version = "0.3"
-features = [ "full" ]
+features = ["full"]

@@ -7,9 +7,9 @@ use axum::{
 use axum_extra::routing::SpaRouter;
 use maud::{html, Markup, DOCTYPE};
 use serde::Serialize;
-use std::{net::SocketAddr, sync::Mutex, sync::Arc};
+use std::{net::SocketAddr, sync::Arc, sync::Mutex};
 
-use pronouns::{PronounSet, PronounTrie};
+use xe_pronouns::{PronounSet, PronounTrie};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -60,9 +60,7 @@ async fn health() -> String {
     "OK".into()
 }
 
-async fn all_pronouns_json(
-    State(prons): State<Arc<PronounTrie>>
-) -> Json<Vec<PronounSet>> {
+async fn all_pronouns_json(State(prons): State<Arc<PronounTrie>>) -> Json<Vec<PronounSet>> {
     Json(prons.gather())
 }
 
