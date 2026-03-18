@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
         rx.await.ok();
     });
 
-    let tx = Mutex::new(Some(tx));
+    let _tx = Mutex::new(Some(tx));
 
     // Await the `server` receiving the signal...
     if let Err(e) = graceful.await {
